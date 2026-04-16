@@ -25,6 +25,7 @@ Für die erste Ausbaustufe liegt der Fokus auf:
 - eine `.gitignore` für Repo-Hygiene und Secrets-Schutz
 - ein `CHANGELOG.md` für nachvollziehbare Änderungen
 - ein GitHub-Actions-Workflow für `bash -n` und `shellcheck`
+- ein repo-lokaler Installer-Lauf nach der Container-Erstellung
 
 ## Repository-Struktur
 
@@ -53,6 +54,8 @@ Läuft auf dem **Proxmox-Host**.
 Aufgaben:
 - Container-Defaults definieren
 - die Container-Erstellung über das Community-Scripts-Modell anstoßen
+- danach den Installer aus **diesem Repository** im Container ausführen
+- prüfen, ob `archisteamfarm.service` wirklich aktiv ist
 - ein Update-Skript für bestehende Installationen bereitstellen
 
 ### `install/archisteamfarm-install.sh`
@@ -65,6 +68,7 @@ Aufgaben:
 - `ASF.json` und `IPC.config` anlegen
 - `archisteamfarm.service` erzeugen
 - Verbindungsdaten in `/root/asf-lxc-info.txt` speichern
+- den Dienst starten und verifizieren
 
 ### `.github/workflows/shell-validation.yml`
 Automatische Repository-Validierung bei Push und Pull Request.
@@ -87,6 +91,15 @@ Die aktuelle Startvariante ist bewusst einfach:
 - Webzugriff über ASFs IPC/Weboberfläche
 - Schutz per generiertem `IPCPassword`
 - kein externer Internetzugriff vorgesehen
+
+## Wichtiger Hinweis zu älteren fehlgeschlagenen Test-Containern
+
+Wenn du bereits einen früheren Testlauf mit einem `404` im Installationsablauf hattest, ist dieser Container in der Regel **unvollständig**. Dann fehlen typischerweise:
+- `/opt/archisteamfarm`
+- `archisteamfarm.service`
+- `/root/asf-lxc-info.txt`
+
+In dem Fall den betroffenen Test-Container löschen und mit dem **aktuellen Repo-Stand** neu erstellen.
 
 ## Schnellstart in Proxmox
 
