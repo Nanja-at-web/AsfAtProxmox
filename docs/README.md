@@ -119,6 +119,17 @@ Prüfen:
 - blockiert die Proxmox-Firewall den Zugriff?
 - wurde `IPC.config` korrekt geschrieben?
 
+### Frühere Test-Container mit 404-Fehler
+
+Wenn bei einem älteren Lauf während der Container-Erstellung ein `curl: (22) ... 404` aufgetreten ist und danach weder `/opt/archisteamfarm` noch `archisteamfarm.service` vorhanden sind, ist dieser Test-Container unvollständig. In dem Fall:
+
+```bash
+pct stop <CTID>
+pct destroy <CTID>
+```
+
+Danach den Container mit dem aktuellen Repo-Stand neu erstellen.
+
 ### Bot meldet sich nicht an
 
 Häufige Ursachen:
