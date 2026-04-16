@@ -1,0 +1,42 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Archives and local build artifacts
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Sensitive or local runtime data that should never be committed
+.env
+.env.*
+secrets/
+config/*.json
+!config/*.example
+*.db
+*.sqlite
+*.sqlite3
+*.maFile
+*.pem
+*.key
+*.crt
+*.pfx
+
+# Python cache (for helper tooling, if used later)
+__pycache__/
+*.pyc
