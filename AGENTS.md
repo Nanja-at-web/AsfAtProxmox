@@ -6,7 +6,7 @@ This file provides guidance to AI agents working in this repository.
 
 1. **Testing**
    - Always add tests for backend or installation logic changes where practical.
-   - For shell-based Proxmox/LXC scripts, syntax checks, validation checks, and rerun safety checks are the minimum expected test surface.
+   - For shell-based Proxmox/LXC scripts, syntax checks, validation checks, rerun safety checks, and CI verification are the minimum expected test surface.
    - Frontend or UI-related changes should include tests when a harness exists; otherwise document manual verification steps.
 
 2. **Code Style & Architecture**
@@ -24,7 +24,7 @@ This file provides guidance to AI agents working in this repository.
    - Keep console output concise and readable.
 
 5. **Documentation**
-   - Always update `README.md` and all agent instruction files when behavior, commands, paths, configuration flow, or setup assumptions change.
+   - Always update `README.md` and all agent instruction files when behavior, commands, paths, configuration flow, setup assumptions, or CI behavior change.
    - The contents of all agent instruction files must remain identical except for the **Specific Instructions** section.
    - Keep all examples aligned with the current repository structure and the current Proxmox/LXC workflow.
 
@@ -72,7 +72,10 @@ The repository follows a two-stage deployment model.
    - **ASF IPC** provides the web/API backend.
    - The browser UI is served through ASF's IPC/web functionality.
 
-4. **Future extension layer**
+4. **Validation layer**
+   - `.github/workflows/shell-validation.yml` validates shell scripts with `bash -n` and `shellcheck` on push and pull request.
+
+5. **Future extension layer**
    - Optional reverse proxy
    - Optional HTTPS
    - Optional Debian 13 variant
@@ -90,6 +93,9 @@ The repository follows a two-stage deployment model.
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       └── shell-validation.yml
 ├── .gitignore
 ├── AGENTS.md
 ├── CHANGELOG.md
@@ -103,6 +109,7 @@ The repository follows a two-stage deployment model.
 ```
 
 ### Responsibilities
+- `.github/workflows/shell-validation.yml` → CI validation for shell syntax and linting
 - `.gitignore` → protects against committing local artifacts and sensitive runtime data
 - `CHANGELOG.md` → tracks notable repository changes
 - `README.md` → user-facing overview and quick start
@@ -132,6 +139,9 @@ Runs from `/opt/archisteamfarm` and is managed with `systemd`.
 ### 5. Runtime Metadata
 - `/root/asf-lxc-info.txt` → connection details for first login and maintenance
 
+### 6. CI Validation
+- `.github/workflows/shell-validation.yml` → automatic checks for all tracked `.sh` files
+
 ---
 
 ## State Machine Flow
@@ -148,6 +158,7 @@ Conceptual flow:
 8. Service starts
 9. User opens `http://<LXC-IP>:1242`
 10. User creates or imports bot JSON files
+11. Repository changes are validated in GitHub Actions
 
 Expected rerun behavior:
 - preserve existing config where practical
@@ -178,6 +189,7 @@ Authentication in this repository currently centers on ASF IPC access.
 ### Repository files
 - `README.md`
 - `AGENTS.md`
+- `.github/workflows/shell-validation.yml`
 - `ct/archisteamfarm.sh`
 - `install/archisteamfarm-install.sh`
 - `docs/README.md`
@@ -198,6 +210,8 @@ Authentication in this repository currently centers on ASF IPC access.
 ```bash
 bash -n ct/archisteamfarm.sh
 bash -n install/archisteamfarm-install.sh
+shellcheck ct/archisteamfarm.sh
+shellcheck install/archisteamfarm-install.sh
 ```
 
 ### Local repository workflow
@@ -222,6 +236,9 @@ journalctl -u archisteamfarm -n 100 --no-pager
 At minimum, verify:
 - `bash -n ct/archisteamfarm.sh`
 - `bash -n install/archisteamfarm-install.sh`
+- `shellcheck ct/archisteamfarm.sh`
+- `shellcheck install/archisteamfarm-install.sh`
+- the GitHub Actions workflow completes successfully
 - clean install path works on the intended Debian base
 - service starts successfully
 - `/root/asf-lxc-info.txt` is created
@@ -248,6 +265,7 @@ Keep examples consistent with:
 - repository name `AsfAtProxmox`
 - current file paths
 - current quick-start instructions
+- current CI workflow behavior
 
 ---
 
