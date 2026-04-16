@@ -6,7 +6,7 @@ This file provides guidance to AI agents working in this repository.
 
 1. **Testing**
    - Always add tests for backend or installation logic changes where practical.
-   - For shell-based Proxmox/LXC scripts, syntax checks, validation checks, rerun safety checks, and CI verification are the minimum expected test surface.
+   - For shell-based Proxmox/LXC scripts, syntax checks, validation checks, rerun safety checks, service verification, and CI verification are the minimum expected test surface.
    - Frontend or UI-related changes should include tests when a harness exists; otherwise document manual verification steps.
 
 2. **Code Style & Architecture**
@@ -61,11 +61,11 @@ The repository follows a two-stage deployment model.
 
 1. **Proxmox host stage**
    - `ct/archisteamfarm.sh` runs on the Proxmox host.
-   - It defines defaults, delegates container creation, and offers update support.
+   - It defines defaults, creates the container, runs the installer from this repository inside the container, and validates the resulting service state.
 
 2. **Container stage**
    - `install/archisteamfarm-install.sh` runs inside the container.
-   - It installs dependencies, downloads ASF, writes configuration files, creates the service, and stores connection details.
+   - It installs dependencies, downloads ASF, writes configuration files, creates the service, starts ASF, and stores connection details.
 
 3. **Application layer**
    - **ASF** is the runtime.
@@ -123,7 +123,7 @@ The repository follows a two-stage deployment model.
 ## Core Components
 
 ### 1. Proxmox CT Script
-Responsible for host-side container creation defaults and update flow.
+Responsible for host-side container creation defaults, repo-local installer execution, and install validation.
 
 ### 2. Install Script
 Responsible for package installation, ASF deployment, configuration generation, and service registration.
@@ -150,20 +150,22 @@ Conceptual flow:
 
 1. User runs `ct/archisteamfarm.sh` on Proxmox host
 2. Container is created with default resource values
-3. `install/archisteamfarm-install.sh` runs inside the container
-4. Dependencies are installed
-5. Matching ASF release asset is downloaded
-6. Config files are created if absent
-7. `archisteamfarm.service` is created and enabled
-8. Service starts
-9. User opens `http://<LXC-IP>:1242`
-10. User creates or imports bot JSON files
-11. Repository changes are validated in GitHub Actions
+3. The repository installer script is downloaded into the container
+4. `install/archisteamfarm-install.sh` runs inside the container
+5. Dependencies are installed
+6. Matching ASF release asset is downloaded
+7. Config files are created if absent
+8. `archisteamfarm.service` is created and enabled
+9. Service starts and is validated
+10. User opens `http://<LXC-IP>:1242`
+11. User creates or imports bot JSON files
+12. Repository changes are validated in GitHub Actions
 
 Expected rerun behavior:
 - preserve existing config where practical
 - do not overwrite user secrets without intent
 - fail loudly on unsupported architecture or missing runtime requirements
+- fail loudly when the service is not active after setup
 
 ---
 
@@ -250,6 +252,7 @@ When changing installation logic, also verify:
 - rerun behavior does not destroy existing config unintentionally
 - update flow preserves config and service state
 - unsupported architectures fail clearly
+- setup fails clearly when the installer or service validation fails
 
 ---
 
