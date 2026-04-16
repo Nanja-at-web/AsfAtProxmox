@@ -8,6 +8,10 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # Source: https://github.com/JustArchiNET/ArchiSteamFarm | https://github.com/JustArchiNET/ASF-ui | https://github.com/JustArchiNET/ASF-WebConfigGenerator
 
 APP="ArchiSteamFarm"
+REPO_OWNER="Nanja-at-web"
+REPO_NAME="AsfAtProxmox"
+REPO_BRANCH="${REPO_BRANCH:-main}"
+INSTALLER_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/install/archisteamfarm-install.sh"
 
 var_tags="${var_tags:-steam}"
 var_cpu="${var_cpu:-2}"
@@ -98,8 +102,57 @@ function update_script() {
   trap - EXIT
 }
 
+function run_repo_installer() {
+  local ctid
+  ctid="${CTID:-${CT_ID:-}}"
+
+  if [[ -z "$ctid" ]]; then
+    msg_error "Unable to determine container ID for repository installer"
+    exit 1
+  fi
+
+  msg_info "Preparing container ${ctid} for repository installer"
+  pct exec "$ctid" -- bash -lc "apt-get update >/dev/null 2>&1 && apt-get install -y curl ca-certificates >/dev/null 2>&1"
+  msg_ok "Container ${ctid} can download installer"
+
+  msg_info "Downloading repository installer"
+  pct exec "$ctid" -- bash -lc "curl -fsSL '${INSTALLER_URL}' -o /root/archisteamfarm-install.sh"
+  msg_ok "Downloaded repository installer"
+
+  msg_info "Running repository installer inside container ${ctid}"
+  pct exec "$ctid" -- bash /root/archisteamfarm-install.sh
+  msg_ok "Repository installer completed"
+}
+
+function validate_installation() {
+  local ctid
+  ctid="${CTID:-${CT_ID:-}}"
+
+  if [[ -z "$ctid" ]]; then
+    msg_error "Unable to determine container ID for validation"
+    exit 1
+  fi
+
+  msg_info "Validating ${APP} service inside container ${ctid}"
+  if ! pct exec "$ctid" -- systemctl is-active --quiet archisteamfarm; then
+    msg_error "archisteamfarm.service is not active after installation"
+    pct exec "$ctid" -- systemctl status archisteamfarm --no-pager -l || true
+    pct exec "$ctid" -- journalctl -u archisteamfarm -n 50 --no-pager || true
+    exit 1
+  fi
+
+  if ! pct exec "$ctid" -- test -f /root/asf-lxc-info.txt; then
+    msg_error "Expected /root/asf-lxc-info.txt was not created"
+    exit 1
+  fi
+
+  msg_ok "Installation validation successful"
+}
+
 start
 build_container
+run_repo_installer
+validate_installation
 description
 
 msg_ok "Completed successfully!\n"
