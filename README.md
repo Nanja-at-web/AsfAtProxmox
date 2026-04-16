@@ -1,1 +1,165 @@
 # AsfAtProxmox
+
+ArchiSteamFarm (ASF) als **Proxmox VE LXC** mit **Web UI** für den schnellen Start im Heimnetz.
+
+Dieses Repository ist als schlanke Projektbasis für einen **einzelnen Test-LXC** gedacht und orientiert sich am Aufbau der **Proxmox VE Helper-Scripts / Community-Scripts**.
+
+## Ziel
+
+`AsfAtProxmox` soll eine einfache, nachvollziehbare und gut wartbare Möglichkeit bieten, **ASF in einem Proxmox-LXC** zu betreiben.
+
+Für die erste Ausbaustufe liegt der Fokus auf:
+- **einem einzelnen LXC**
+- **direktem Zugriff im LAN** über ASFs Weboberfläche
+- **keinem Reverse Proxy**
+- **keinem HTTPS**
+- **einfacher Wartung und späterer Erweiterbarkeit**
+
+## Enthalten
+
+- **ASF** als eigentliche Laufzeit
+- die integrierte **ASF-Weboberfläche** über IPC
+- automatisierte Erzeugung einer sicheren `IPCPassword`
+- ein `systemd`-Dienst für automatischen Start
+- eine Community-Scripts-nahe Trennung zwischen Host- und In-Container-Logik
+- eine `.gitignore` für Repo-Hygiene und Secrets-Schutz
+- ein `CHANGELOG.md` für nachvollziehbare Änderungen
+
+## Repository-Struktur
+
+```text
+.
+├── .gitignore
+├── AGENTS.md
+├── CHANGELOG.md
+├── README.md
+├── ct/
+│   └── archisteamfarm.sh
+├── install/
+│   └── archisteamfarm-install.sh
+└── docs/
+    └── README.md
+```
+
+## Komponenten
+
+### `ct/archisteamfarm.sh`
+Läuft auf dem **Proxmox-Host**.
+
+Aufgaben:
+- Container-Defaults definieren
+- die Container-Erstellung über das Community-Scripts-Modell anstoßen
+- ein Update-Skript für bestehende Installationen bereitstellen
+
+### `install/archisteamfarm-install.sh`
+Läuft **im Container**.
+
+Aufgaben:
+- Abhängigkeiten installieren
+- passende ASF-Release-Datei laden
+- ASF nach `/opt/archisteamfarm` entpacken
+- `ASF.json` und `IPC.config` anlegen
+- `archisteamfarm.service` erzeugen
+- Verbindungsdaten in `/root/asf-lxc-info.txt` speichern
+
+### `docs/README.md`
+Zusätzliche Laufzeit- und Wartungshinweise.
+
+### `AGENTS.md`
+Arbeitsregeln für AI-Agents und Mitwirkende im Repository.
+
+## Standardverhalten
+
+Die aktuelle Startvariante ist bewusst einfach:
+- Zugriff im Browser über `http://<LXC-IP>:1242`
+- Webzugriff über ASFs IPC/Weboberfläche
+- Schutz per generiertem `IPCPassword`
+- kein externer Internetzugriff vorgesehen
+
+## Schnellstart in Proxmox
+
+### 1. Repository klonen
+
+```bash
+git clone https://github.com/Nanja-at-web/AsfAtProxmox.git
+cd AsfAtProxmox
+```
+
+### 2. CT-Skript auf dem Proxmox-Host ausführen
+
+```bash
+bash ./ct/archisteamfarm.sh
+```
+
+### 3. Nach der Erstellung im Browser öffnen
+
+```text
+http://<LXC-IP>:1242
+```
+
+### 4. Zugangsdaten im Container nachsehen
+
+```bash
+pct list
+pct enter <CTID>
+cat /root/asf-lxc-info.txt
+```
+
+## Ersten Bot anlegen
+
+Im Container liegt eine Vorlage:
+
+```text
+/opt/archisteamfarm/config/ExampleBot.json.example
+```
+
+Kopieren und anpassen:
+
+```bash
+cp /opt/archisteamfarm/config/ExampleBot.json.example /opt/archisteamfarm/config/main.json
+nano /opt/archisteamfarm/config/main.json
+systemctl restart archisteamfarm
+```
+
+## Entwicklung mit deinem GitHub-Repo
+
+### Direkt aus deinem Repo testen
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Nanja-at-web/AsfAtProxmox/main/ct/archisteamfarm.sh)"
+```
+
+### Einzelne Datei prüfen
+
+```bash
+bash -n ct/archisteamfarm.sh
+bash -n install/archisteamfarm-install.sh
+```
+
+## Geplante Ausbaustufen
+
+Später lässt sich dieses Repository ohne Strukturbruch erweitern um:
+- **Nginx Proxy Manager**
+- **HTTPS / Reverse Proxy**
+- **Debian 13 als alternative LXC-Basis**
+- zusätzliche Dokumentation für Updates, Backups und Hardening
+
+## Sicherheitshinweise
+
+Für die A-Variante gilt:
+- Port `1242` nur im **internen Netz** nutzen
+- **nicht direkt ins Internet** freigeben
+- Zugriffe möglichst per **LAN oder VPN**
+- Passwörter und Bot-Konfigurationen nicht ins Repo committen
+
+## Nützliche Befehle im Container
+
+```bash
+systemctl status archisteamfarm
+systemctl restart archisteamfarm
+journalctl -u archisteamfarm -n 100 --no-pager
+```
+
+## Status des Repositories
+
+Dieses Repository ist als **Startbasis** gedacht. Die aktuelle GitHub-Repo-Struktur ist noch sehr klein, daher sind diese Dateien bewusst so aufgebaut, dass du sie direkt als erstes vollständiges Grundgerüst übernehmen kannst.
