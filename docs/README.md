@@ -72,6 +72,27 @@ nano /opt/archisteamfarm/config/main.json
 systemctl restart archisteamfarm
 ```
 
+## Repository-Validierung
+
+Zusätzlich zur lokalen Prüfung gibt es jetzt einen GitHub-Actions-Workflow:
+
+```text
+.github/workflows/shell-validation.yml
+```
+
+Er prüft alle versionierten `.sh`-Dateien automatisch mit:
+- `bash -n`
+- `shellcheck`
+
+Lokale Prüfung vor dem Commit:
+
+```bash
+bash -n ct/archisteamfarm.sh
+bash -n install/archisteamfarm-install.sh
+shellcheck ct/archisteamfarm.sh
+shellcheck install/archisteamfarm-install.sh
+```
+
 ## Sicherheit
 
 Für diese erste Projektphase gilt:
