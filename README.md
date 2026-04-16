@@ -24,11 +24,15 @@ Für die erste Ausbaustufe liegt der Fokus auf:
 - eine Community-Scripts-nahe Trennung zwischen Host- und In-Container-Logik
 - eine `.gitignore` für Repo-Hygiene und Secrets-Schutz
 - ein `CHANGELOG.md` für nachvollziehbare Änderungen
+- ein GitHub-Actions-Workflow für `bash -n` und `shellcheck`
 
 ## Repository-Struktur
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       └── shell-validation.yml
 ├── .gitignore
 ├── AGENTS.md
 ├── CHANGELOG.md
@@ -61,6 +65,14 @@ Aufgaben:
 - `ASF.json` und `IPC.config` anlegen
 - `archisteamfarm.service` erzeugen
 - Verbindungsdaten in `/root/asf-lxc-info.txt` speichern
+
+### `.github/workflows/shell-validation.yml`
+Automatische Repository-Validierung bei Push und Pull Request.
+
+Aufgaben:
+- Shell-Skripte im Repo sammeln
+- `bash -n` für Syntax-Checks ausführen
+- `shellcheck` für statische Shell-Prüfung ausführen
 
 ### `docs/README.md`
 Zusätzliche Laufzeit- und Wartungshinweise.
@@ -129,12 +141,28 @@ systemctl restart archisteamfarm
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Nanja-at-web/AsfAtProxmox/main/ct/archisteamfarm.sh)"
 ```
 
-### Einzelne Datei prüfen
+### Einzelne Datei lokal prüfen
 
 ```bash
 bash -n ct/archisteamfarm.sh
 bash -n install/archisteamfarm-install.sh
+shellcheck ct/archisteamfarm.sh
+shellcheck install/archisteamfarm-install.sh
 ```
+
+## CI / GitHub Actions
+
+Das Repository enthält jetzt einen Workflow unter:
+
+```text
+.github/workflows/shell-validation.yml
+```
+
+Dieser Workflow läuft bei Push und Pull Request auf `main` und prüft alle `.sh`-Dateien mit:
+- `bash -n`
+- `shellcheck`
+
+Damit bekommst du früh Rückmeldung, wenn ein Shell-Skript syntaktisch kaputt ist oder typische Shell-Probleme enthält.
 
 ## Geplante Ausbaustufen
 
@@ -162,4 +190,4 @@ journalctl -u archisteamfarm -n 100 --no-pager
 
 ## Status des Repositories
 
-Dieses Repository ist als **Startbasis** gedacht. Die aktuelle GitHub-Repo-Struktur ist noch sehr klein, daher sind diese Dateien bewusst so aufgebaut, dass du sie direkt als erstes vollständiges Grundgerüst übernehmen kannst.
+Dieses Repository ist als **Startbasis** gedacht. Die aktuelle Struktur ist jetzt so vorbereitet, dass du Shell-Änderungen nicht nur lokal, sondern auch automatisch über GitHub Actions validieren kannst.
