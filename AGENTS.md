@@ -90,7 +90,9 @@ The repository follows a two-stage deployment model.
 
 ```text
 .
+├── .gitignore
 ├── AGENTS.md
+├── CHANGELOG.md
 ├── README.md
 ├── ct/
 │   └── archisteamfarm.sh
@@ -101,6 +103,8 @@ The repository follows a two-stage deployment model.
 ```
 
 ### Responsibilities
+- `.gitignore` → protects against committing local artifacts and sensitive runtime data
+- `CHANGELOG.md` → tracks notable repository changes
 - `README.md` → user-facing overview and quick start
 - `AGENTS.md` → contributor and AI-agent rules
 - `ct/` → Proxmox host-side entry scripts
@@ -157,29 +161,32 @@ Expected rerun behavior:
 Authentication in this repository currently centers on ASF IPC access.
 
 ### Current model
-- Web access is provided by ASF IPC
-- Access is intended for LAN use in the initial version
-- `IPCPassword` is generated on first install if `ASF.json` does not already exist
-- Sensitive data must not be committed to the repository
+- Web access is enabled through `IPC.config`
+- Authentication is protected using `IPCPassword`
+- Access is intended for LAN use only in the initial setup
 
-### Security expectations
-- Never publish port `1242` directly to the public internet without explicit hardening
-- Prefer VPN or internal-only access for the first deployment stage
-- If public access is needed later, document a reverse-proxy-based design
+### Required handling
+- Never commit real bot credentials
+- Never commit generated passwords
+- Never replace an existing user config unless explicitly required
+- Document any authentication-related behavior changes in `README.md` and `docs/README.md`
 
 ---
 
 ## Key Files
 
-### Host-side
+### Repository files
+- `README.md`
+- `AGENTS.md`
 - `ct/archisteamfarm.sh`
-
-### Container-side
 - `install/archisteamfarm-install.sh`
+- `docs/README.md`
 
-### Runtime targets
+### Container files
 - `/opt/archisteamfarm/`
-- `/opt/archisteamfarm/config/`
+- `/opt/archisteamfarm/config/ASF.json`
+- `/opt/archisteamfarm/config/IPC.config`
+- `/opt/archisteamfarm/config/ExampleBot.json.example`
 - `/etc/systemd/system/archisteamfarm.service`
 - `/root/asf-lxc-info.txt`
 
@@ -187,56 +194,74 @@ Authentication in this repository currently centers on ASF IPC access.
 
 ## Development Commands
 
-### Shell validation
+### Repository validation
 ```bash
 bash -n ct/archisteamfarm.sh
 bash -n install/archisteamfarm-install.sh
 ```
 
-### Suggested local linting
+### Local repository workflow
 ```bash
-shellcheck ct/archisteamfarm.sh
-shellcheck install/archisteamfarm-install.sh
+git status
+git add .
+git commit -m "Describe your change"
 ```
 
-### Service debugging inside container
+### Proxmox runtime checks
 ```bash
+pct list
+pct enter <CTID>
 systemctl status archisteamfarm
 journalctl -u archisteamfarm -n 100 --no-pager
 ```
 
 ---
 
-## Change Rules
-
-When modifying this repository, agents should usually update all relevant parts together:
-- implementation scripts
-- README examples
-- docs in `docs/`
-- AGENTS or other instruction files where applicable
-
-Do not leave the repository in a state where commands, paths, or documented defaults differ from actual behavior.
-
----
-
 ## Testing Expectations
 
-Minimum expectations for script-related changes:
-- shell syntax validation passes
-- no obvious rerun breakage for existing installs
-- documentation examples match current file paths
-- sensitive defaults are handled safely
+At minimum, verify:
+- `bash -n ct/archisteamfarm.sh`
+- `bash -n install/archisteamfarm-install.sh`
+- clean install path works on the intended Debian base
+- service starts successfully
+- `/root/asf-lxc-info.txt` is created
+- Web UI loads on `http://<LXC-IP>:1242`
+- login works with the generated IPC password
+- a sample bot file can be added without breaking startup
 
-If behavior changes, document how it was verified.
+When changing installation logic, also verify:
+- rerun behavior does not destroy existing config unintentionally
+- update flow preserves config and service state
+- unsupported architectures fail clearly
 
 ---
 
-## Future-Proofing
+## Documentation Rules
 
-Planned growth areas include:
-- reverse proxy support
-- HTTPS support
-- Debian 13 support
-- additional maintenance and backup tooling
+Whenever behavior changes, update:
+- `README.md`
+- `docs/README.md`
+- `AGENTS.md`
+- any other agent instruction files added later
 
-Agents should avoid hardcoding assumptions that would make those future extensions difficult.
+Keep examples consistent with:
+- repository name `AsfAtProxmox`
+- current file paths
+- current quick-start instructions
+
+---
+
+## Preferred Change Style
+
+Preferred order of work:
+1. keep the current simple test setup working
+2. improve safety and maintainability
+3. document the change
+4. add validation or tests where practical
+5. only then introduce optional complexity
+
+Avoid introducing:
+- premature multi-service assumptions
+- hardcoded public exposure
+- undocumented behavior changes
+- large structural refactors without permission
