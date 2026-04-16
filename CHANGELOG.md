@@ -15,6 +15,12 @@ The format is inspired by Keep a Changelog and uses a simple project-focused str
 - Secure default ASF configuration with generated `IPCPassword`
 - `systemd` service setup for ArchiSteamFarm auto-start
 - `.gitignore` for local artifacts, logs, editor files, and sensitive runtime data
+- `.github/workflows/shell-validation.yml` for automatic `bash -n` and `shellcheck` validation
+
+### Changed
+- `README.md` updated with CI workflow documentation and local validation commands
+- `AGENTS.md` updated with CI expectations and workflow responsibilities
+- `docs/README.md` updated with repository validation guidance
 
 ### Notes
 - Initial scope targets a single Proxmox LXC for LAN-only testing
