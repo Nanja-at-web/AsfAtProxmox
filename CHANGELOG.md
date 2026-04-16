@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is inspired by Keep a Changelog and uses a simple project-focused structure.
 
+## [0.1.1] - 2026-04-16
+
+### Fixed
+- `ct/archisteamfarm.sh` now runs the installer from this repository after container creation instead of relying on a missing remote install path
+- installation now fails clearly when `archisteamfarm.service` is not active after setup
+- `install/archisteamfarm-install.sh` is now self-contained and no longer depends on the Community-Scripts in-container helper payload
+
+### Changed
+- `README.md` now documents the repo-local installer flow and the need to recreate earlier broken test containers
+
 ## [0.1.0] - 2026-04-16
 
 ### Added
