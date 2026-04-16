@@ -1,0 +1,67 @@
+name: Shell Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-shell-scripts:
+    name: bash -n and shellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Collect shell scripts
+        id: collect
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git ls-files '*.sh')
+
+          if [[ "${#files[@]}" -eq 0 ]]; then
+            echo "No shell scripts found in repository."
+            exit 1
+          fi
+
+          printf 'Found shell scripts:\n'
+          printf ' - %s\n' "${files[@]}"
+
+          {
+            echo 'files<<EOF'
+            printf '%s\n' "${files[@]}"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run bash -n
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            [[ -n "$file" ]] || continue
+            echo "Syntax check: $file"
+            bash -n "$file"
+          done <<< "${{ steps.collect.outputs.files }}"
+
+      - name: Run shellcheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            [[ -n "$file" ]] || continue
+            echo "ShellCheck: $file"
+            shellcheck "$file"
+          done <<< "${{ steps.collect.outputs.files }}"
